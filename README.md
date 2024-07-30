@@ -1,121 +1,95 @@
-# Setup Virtual Environment
+# Pre-Requisites
+ - Install Docker Desktop in your local system and enable kubernetes
+ - Create a Free Trial account - GCP
+ - Install Kubectl - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 
-```python
-conda create -n jenkins-env python=3.10 -y
-conda activate jenkins-env
-pip install -r requirements.txt
-pip install .
-```
+- Install Gcloud CLI - https://cloud.google.com/sdk/docs/install#mac
+- mac - `brew install --cask google-cloud-sdk`
+- Getting Started with creation of GKE clusters - https://k21academy.com/docker-kubernetes/create-a-gke-cluster/
 
-# Test the FASTAPI
+# Connecting Local Kubectl with Gcloud
+- Pre-requisite : Install gcloud cli from above
+- run command `gcloud auth login`
+- Optionall set the default project using the below command:
+`gcloud config set project <project-id>`
+- Connect to Kubernetes Cluster by running the command from GKE Screen
+`gcloud container clusters get-credentials cka-certification --zone us-central1-c --project civic-rhythm-404204`
 
-```json
 
-{
-  "Gender": "Male",
-  "Married": "No",
-  "Dependents": "2",
-  "Education": "Graduate",
-  "Self_Employed": "No",
-  "ApplicantIncome": 5849,
-  "CoapplicantIncome": 0,
-  "LoanAmount": 1000,
-  "Loan_Amount_Term": 1,
-  "Credit_History": "1.0",
-  "Property_Area": "Rural"
-}
+# Install Kubectl locally
 
+
+# Running an App on Kubernetes
+
+- List Nodes in K8s cluster
 
 ```
-
-# Docker Commands
+kubectl get nodes
+kubectl config use-context docker 
 ```
-docker build -t loan_pred:v1 .
-docker build -t manifoldailearning/cicd:latest . 
-docker push manifoldailearning/cicd:latest
-
-docker run -d -it --name modelv1 -p 8005:8005 manifoldailearning/cicd:latest bash
-
-docker exec modelv1 python prediction_model/training_pipeline.py
-
-docker exec modelv1 pytest -v --junitxml TestResults.xml --cache-clear
-
-docker cp modelv1:/code/src/TestResults.xml .
-
-docker exec -d -w /code modelv1 python main.py
-
-docker exec -d -w /code modelv1 uvicorn main:app --proxy-headers --host 0.0.0.0 --port 8005
-
-
+- Deploy the application defined in pod.yml
 ```
 
-# Installation of Jenkins
+kubectl apply -f pod.yml
+kubectl describe pod first-pod # get detailed info about running pod
 
-```bash
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
-  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt-get update
-sudo apt-get install jenkins
+kubectel get pods # display all the pods in the namespace
+kubectl get pod first-pod
 
-sudo apt update
-sudo apt install fontconfig openjdk-17-jre
-java -version
+kubectl apply -f svc-cloud.yml # Deploy the service 
 
-sudo systemctl enable jenkins
-sudo systemctl start jenkins
-sudo systemctl status jenkins
-```
+kubectl get services
 
-`
-sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-`
+kubectl get svc # Check external IP of the service
 
-```bash
-# Add Docker's official GPG key:
-sudo apt-get update
-sudo apt-get install ca-certificates curl gnupg
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
+kubectl get pods --all-namespaces -o wide
 
-# Add the repository to Apt sources:
-for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
+kubectl delete pod first-pod
 
-echo \
-  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+kubectl delete svc cloud-lb
 
-sudo usermod -a -G docker jenkins
-sudo usermod -a -G docker $USER
+kubectl delete pods --all
+
+kubectl apply -f deploy.yml
+
+kubectl get deployment catgif
+
+kubectl delete deployment catgif
+
+kubectl delete svc cloud-lb
+
+kubectl get pods -o wide
+
+kubectl get pods -o yaml
+
+kubectl describe pods first-pod
+
+kubectl logs first-pod
+
+kubectl logs firstpod --container first_container # incase of Multi container
+
+
+kubectl exec first-pod -- ps
+kubectl exec -it first-pod -- sh
+apk add curl
+curl localhost:5000
+
+
+kubectl config get-contexts
+
+kubectl config delete-cluster my-cluster
+
+kubectl config delete-context my-cluster-context
+
+
+kubectl config use-context docker-desktop
 
 ```
 
-# Admin password Jenkins
 
-`sudo cat /var/lib/jenkins/secrets/initialAdminPassword`
+# Other Basic Commands
+```
+kubectl run nginx --image=nginx   # Run container images on kubernetes pods
 
-# Payload URL format in github repo webhook
-
-`http://<public-ipv4 address>:8080/github-webhook/` #replace it with ur own public-ipv4 address
 
 ```
-
-# Additional Improvements
-
-docker remove $(docker ps -a -q)
-docker images --format "{{.ID}} {{.CreatedAt}}" | sort -rk 2 | awk 'NR==1{print $1}'
-
-
-
-# Create Stage Branch
-`git checkout -b staging`
-`git push `
-
-
-
